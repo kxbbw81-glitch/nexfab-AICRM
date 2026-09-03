@@ -61,6 +61,8 @@ import type {
   CommissionRecord,
   CustomerProfile,
   RetentionReport,
+  ProductRecommendation,
+  RepurchaseStatus,
 } from './types'
 
 export class ApiError extends Error {
@@ -189,7 +191,12 @@ export const api = {
   customers: (params = 'pageSize=8') => apiFetch<ListEnvelope<Customer>>(`/api/customers?${params}`),
   customer: (id: string) => apiFetch<Customer>(`/api/customers/${id}`),
   customerProfile: (id: string) => apiFetch<CustomerProfile>(`/api/customers/${id}/profile`),
-  retention: (params = 'window=90') => apiFetch<RetentionReport>(`/api/retention?${params}`),
+  customerProductRecommendations: (id: string, query = '') => apiFetch<{ customerId: string; items: ProductRecommendation[]; limitations: string[] }>(`/api/customers/${id}/product-recommendations${query ? `?q=${encodeURIComponent(query)}` : ''}`),
+  customerRepurchase: (id: string) => apiFetch<RepurchaseStatus>(`/api/customers/${id}/repurchase`),
+  createRepurchaseFollowUp: (id: string, content: string) => apiFetch<FollowUp>(`/api/customers/${id}/repurchase/follow-ups`, json('POST', { content })),
+  customerCsv: () => apiBinary('/api/customers/export'),
+  productCsv: () => apiBinary('/api/products/export'),
+  deleteCustomer: (id: string) => apiFetch<void>(`/api/customers/${id}`, { method: 'DELETE' }),
   createCustomer: (body: Record<string, unknown>) => apiFetch<Customer>('/api/customers', json('POST', body)),
   contacts: (customerId: string, params = 'pageSize=8') => apiFetch<ListEnvelope<Contact>>(`/api/customers/${customerId}/contacts?${params}`),
   createContact: (customerId: string, body: Record<string, unknown>) => apiFetch<Contact>(`/api/customers/${customerId}/contacts`, json('POST', body)),
@@ -208,6 +215,7 @@ export const api = {
   createProductCategory: (body: Record<string, unknown>) => apiFetch<ProductCategory>('/api/product-categories', json('POST', body)),
   products: (params = 'pageSize=20') => apiFetch<ListEnvelope<Product>>(`/api/products?${params}`),
   createProduct: (body: Record<string, unknown>) => apiFetch<Product>('/api/products', json('POST', body)),
+  archiveProduct: (id: string) => apiFetch<Product>(`/api/products/${id}`, { method: 'DELETE' }),
   productDocs: (productId: string, params = 'pageSize=20') => apiFetch<ListEnvelope<ProductDoc>>(`/api/products/${productId}/docs?${params}`),
   createProductDoc: (productId: string, body: Record<string, unknown>) => apiFetch<ProductDoc>(`/api/products/${productId}/docs`, json('POST', body)),
 
@@ -247,8 +255,9 @@ export const api = {
   createShipment: (orderId: string, body: Record<string, unknown>) => apiFetch<Shipment>(`/api/orders/${orderId}/shipments`, json('POST', body)),
   updateShipmentStatus: (shipmentId: string, body: Record<string, unknown>) => apiFetch<Shipment>(`/api/shipments/${shipmentId}/status`, { method: 'PATCH', body: JSON.stringify(body) }),
 
-  // 修复说明：[中危-前端契约完整性]，原因：沟通时间线/提成视图已接入真实后端，但 final 树缺少对应 API 客户端方法，导致 typecheck/build 失败。
+  // 修复说明：[P1-台账外]，原因：沟通时间线与提成导航需要消费已有后端接口。
   timeline: (params: string) => apiFetch<ListEnvelope<TimelineEvent>>(`/api/timeline?${params}`),
   commissions: (params = '') => apiFetch<CommissionReport>(`/api/commissions${params ? `?${params}` : ''}`),
   commissionRecords: (params = 'pageSize=15') => apiFetch<ListEnvelope<CommissionRecord>>(`/api/commission-records?${params}`),
+  retention: (params = '') => apiFetch<RetentionReport>(`/api/repurchase${params ? `?${params}` : ''}`),
 }

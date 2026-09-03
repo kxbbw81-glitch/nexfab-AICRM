@@ -800,7 +800,7 @@ export interface AiTaskEvent {
   errorCode?: string | null
 }
 
-// 修复说明：[中危-前端契约完整性]，原因：沟通时间线/提成视图导入真实后端返回类型，但 final 树缺少类型定义，导致 typecheck/build 失败。
+// 修复说明：[P1-台账外]，原因：沟通时间线/提成视图接入真实后端所需类型（字段与 Prisma 模型对齐）。
 export type TimelineEvent = {
   id: string
   customerId: string
@@ -839,38 +839,6 @@ export type CommissionReport = {
   sourcePolicy: string
 }
 
-export type CustomerProfile = {
-  customer: {
-    id: string; name: string; country: string | null; website: string | null
-    ownerId: string; owner: { id: string; name: string; email: string; role: string } | null
-    createdAt: string; updatedAt: string
-  }
-  contacts: { id: string; name: string; title: string | null; email: string | null; phone: string | null }[]
-  opportunityStats: {
-    total: number; totalAmount: number; wonCount: number; wonAmount: number
-    stageBreakdown: { stage: string; count: number; amount: number }[]
-  }
-  opportunities: { id: string; name: string; stage: string; amount: number; currency: string; ownerName: string; createdAt: string; updatedAt: string }[]
-  orderStats: {
-    total: number; totalAmount: number; totalPaid: number; outstanding: number; collectionRate: number
-    statusBreakdown: { status: string; count: number; amount: number }[]
-  }
-  orders: { id: string; orderNo: string; status: string; paymentStatus: string; totalAmount: number; currency: string; createdAt: string }[]
-  samples: { id: string; status: string; createdAt: string }[]
-  timeline: { id: string; type: string; summary: string; content: string | null; occurredAt: string; userName: string }[]
-}
-
-export type RetentionRow = {
-  customerId: string; name: string; country: string | null; ownerName: string
-  lastDealAt: string; lastDealAmount: number; dealCount: number; totalAmount: number
-  repurchaseAt: string; daysLeft: number; window: 'overdue' | 'near' | 'upcoming'
-}
-export type RetentionReport = {
-  rows: RetentionRow[]
-  stats: { total: number; overdue: number; near: number; upcoming: number; totalAmount: number }
-  window: number
-}
-
 export type CommissionRecord = {
   id: string
   salesId: string
@@ -884,4 +852,74 @@ export type CommissionRecord = {
   commissionAmount: number
   status: string
   sales?: { id: string; name: string; email: string; role: string; teamId: string | null }
+}
+
+export type CustomerProfileContact = {
+  id: string
+  name: string
+  title?: string | null
+  email?: string | null
+  phone?: string | null
+}
+
+export type CustomerProfileTimelineEvent = {
+  id: string
+  type: string
+  summary?: string | null
+  occurredAt?: string | null
+  userName?: string | null
+}
+
+export type CustomerProfile = {
+  customer: {
+    id: string
+    name: string
+    country: string | null
+    website: string | null
+    owner?: OwnerSummary | null
+    createdAt?: string | null
+  }
+  profile: { score: number; level: 'LOW' | 'MEDIUM' | 'HIGH'; factors: { profileCompletion: number; commercialActivity: number }; missing: string[] }
+  counts: { contacts: number; opportunities: number; orders: number }
+  opportunityStats?: {
+    total: number
+    totalAmount: number
+    wonCount: number
+    stageBreakdown: Array<{ stage: string; count: number; amount: number }>
+  }
+  orderStats?: {
+    total: number
+    totalAmount: number
+    totalPaid: number
+    outstanding: number
+    collectionRate: number
+    statusBreakdown: Array<{ status: string; count: number; amount: number }>
+  }
+  contacts: CustomerProfileContact[]
+  timeline: CustomerProfileTimelineEvent[]
+}
+
+export type ProductRecommendation = { id: string; sku: string; name: string; reason: string }
+export type RepurchaseStatus = { customerId: string; deliveredOrders: number; eligible: boolean; recommendation: string; opportunityId: string | null }
+
+export type RetentionRow = {
+  customerId: string
+  name?: string
+  companyName?: string
+  country?: string | null
+  customerLevel?: string | null
+  ownerName?: string | null
+  lastDealAt?: string | null
+  lastDealAmount?: number
+  dealCount: number
+  totalAmount: number
+  repurchaseAt?: string | null
+  daysLeft: number
+  window: 'overdue' | 'near' | 'upcoming' | string
+}
+
+export type RetentionReport = {
+  rows: RetentionRow[]
+  cycleDays?: number
+  stats: { total: number; overdue: number; near: number; totalAmount: number }
 }

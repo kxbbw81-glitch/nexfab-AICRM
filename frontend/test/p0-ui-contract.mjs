@@ -36,7 +36,7 @@ assert.match(proxy, /BACKEND_URL/, 'proxy must target existing backend URL')
 assert.doesNotMatch(proxy, /DATABASE_URL|SESSION_SECRET/, 'frontend proxy must not read database/session secrets')
 
 const css = await readFile(files.globals, 'utf8')
-assert.match(css, /#185fa5/i, 'brand color must follow reference')
+assert.match(css, /#2d2d2d/i, 'brand color must follow NexFab VI reference')
 assert.match(css, /overflow: hidden/, 'page shell must follow reference full-height app behavior')
 
 console.log(JSON.stringify({ result: 'passed', mode: 'p0-ui-contract', checks: 14 }))
