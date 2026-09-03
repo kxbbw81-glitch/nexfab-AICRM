@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const nextBin = require.resolve('next/dist/bin/next')
 import { once } from 'node:events'
+import { existsSync } from 'node:fs'
 import { createServer } from 'node:net'
 
 const root = new URL('../../', import.meta.url)
@@ -32,6 +33,21 @@ function start(command, args, options) {
   child.stderr.on('data', (chunk) => { log += chunk.toString() })
   child.log = () => log.slice(-4000)
   return child
+}
+
+function ensureProductionBuild(env) {
+  if (existsSync(new URL('.next/BUILD_ID', frontendDir))) return
+  const result = spawnSync(process.execPath, [nextBin, 'build'], {
+    cwd: frontendDirPath,
+    env,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  })
+  if (result.status !== 0) {
+    console.error('frontend build stdout:\n' + (result.stdout || ''))
+    console.error('frontend build stderr:\n' + (result.stderr || ''))
+    throw new Error(`next build failed with status ${result.status}`)
+  }
 }
 
 async function waitFor(url, attempts = 80) {
@@ -79,9 +95,11 @@ let frontend
 
 try {
   await waitFor(`http://127.0.0.1:${backendPort}/health`)
+  const frontendEnv = { ...process.env, BACKEND_URL: `http://127.0.0.1:${backendPort}` }
+  ensureProductionBuild(frontendEnv)
   frontend = start(process.execPath, [nextBin, 'start', '--hostname', '127.0.0.1', '--port', String(frontendPort)], {
     cwd: frontendDirPath,
-    env: { ...process.env, BACKEND_URL: `http://127.0.0.1:${backendPort}` },
+    env: frontendEnv,
   })
   const appBase = `http://127.0.0.1:${frontendPort}`
   await waitFor(appBase)
